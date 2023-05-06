@@ -3,45 +3,62 @@
 #include <vector>
 #include <random>
 #include <chrono>
+#include <iterator>
+#include <algorithm>
+#include <fstream>
+
+
+class Student {
+public:
+    std::string name;
+    std::string fac;
+    int pass;
+    std::string date;
+    std::string room;
+
+    Student(const std::string& name, const std::string& fac, const int& pass, const std::string& date, const std::string& room): name(name), fac(fac), pass(pass), date(date), room(room) {}
+};
+
+template<typename T>
+struct Node {
+        Student* student;
+        T data;
+        Node* left;
+        Node* right;
+        int height;
+
+        Node(const T& data, Student* student): data(data), student(student), left(nullptr), right(nullptr), height(1) {}
+    };
 
 
 template<typename T>
 class AVLTree {
 private:
-    struct Node {
-        int index;
-        T data;
-        Node* left;
-        Node* right;
-        int height;
-        
-        Node(const T& data, const int& index): data(data), index(index), left(nullptr), right(nullptr), height(1) {}
-    };
     
-    Node* root;
+    Node<T>* root;
     
-    int height(Node* node) const {
+    int height(Node<T>* node) const {
         if (node == nullptr) {
             return 0;
         }
         return node->height;
     }
     
-    int balanceFactor(Node* node) const {
+    int balanceFactor(Node<T>* node) const {
         if (node == nullptr) {
             return 0;
         }
         return height(node->left) - height(node->right);
     }
     
-    void fixHeight(Node* node) {
+    void fixHeight(Node<T>* node) {
         int leftHeight = height(node->left);
         int rightHeight = height(node->right);
         node->height = (leftHeight > rightHeight ? leftHeight : rightHeight) + 1;
     }
     
-    Node* rotateRight(Node* node) {
-        Node* leftChild = node->left;
+    Node<T>* rotateRight(Node<T>* node) {
+        Node<T>* leftChild = node->left;
         node->left = leftChild->right;
         leftChild->right = node;
         fixHeight(node);
@@ -49,8 +66,8 @@ private:
         return leftChild;
     }
     
-    Node* rotateLeft(Node* node) {
-        Node* rightChild = node->right;
+    Node<T>* rotateLeft(Node<T>* node) {
+        Node<T>* rightChild = node->right;
         node->right = rightChild->left;
         rightChild->left = node;
         fixHeight(node);
@@ -58,7 +75,7 @@ private:
         return rightChild;
     }
     
-    Node* balance(Node* node) {
+    Node<T>* balance(Node<T>* node) {
         fixHeight(node);
         if (balanceFactor(node) == 2) {
             if (balanceFactor(node->left) < 0) {
@@ -74,26 +91,26 @@ private:
         return node;
     }
     
-    Node* insert(Node* node, const T& data, const int index) {
+    Node<T>* insert(Node<T>* node, const T& data, Student* student) {
         if (node == nullptr) {
-            return new Node(data, index);
+            return new Node(data, student);
         }
         if (data < node->data) {
-            node->left = insert(node->left, data, index);
+            node->left = insert(node->left, data, student);
         } else {
-            node->right = insert(node->right, data, index);
+            node->right = insert(node->right, data, student);
         }
         return balance(node);
     }
     
-    Node* findMin(Node* node) const {
+    Node<T>* findMin(Node<T>* node) const {
         if (node->left == nullptr) {
             return node;
         }
         return findMin(node->left);
     }
     
-    Node* removeMin(Node* node) {
+    Node<T>* removeMin(Node<T>* node) {
         if (node->left == nullptr) {
             return node->right;
         }
@@ -101,7 +118,7 @@ private:
         return balance(node);
     }
     
-    Node* remove(Node* node, const T& data) {
+    Node<T>* remove(Node<T>* node, const T& data) {
         if (node == nullptr) {
             return nullptr;
         }
@@ -110,53 +127,68 @@ private:
         } else if (data > node->data) {
             node->right = remove(node->right, data);
         } else {
-            Node* leftChild = node->left;
-            Node* rightChild = node->right;
+            Node<T>* leftChild = node->left;
+            Node<T>* rightChild = node->right;
             delete node;
             if (rightChild == nullptr) {
                 return leftChild;
             }
-            Node* minNode = findMin(rightChild);
+            Node<T>* minNode = findMin(rightChild);
             minNode->right = removeMin(rightChild);
             minNode->left = leftChild;
             return balance(minNode);
         }
         return balance(node);
     }
+    void printTree(Node<T>* root) {
+            if (root == nullptr) return;
+
+            printTree(root->left);
+            std::cout << root->data << "  ";
+            printTree(root->right);
+    }
+
     
 
-    bool contains(const T& data) const {
-        Node* current = root;
-        while (current != nullptr) {
-            if (data == current->data) {
-                return true;
-            } else if (data < current->data) {
-                current = current->left;
-            } else {
-                current = current->right;
-            }
-        }
-        return false;
+public:
+    AVLTree(): root(nullptr) {}
+    
+    void insert(const T& data, Student* student) {
+	    root = insert(root, data, student);
+	
+    }
+    void remove(const T& data, Student* student) {
+	    root = remove(root, data, student);
+	
+    }
+    Node<T>* contains(const T& data) const {
+       Node<T>* current = root;
+       while (current != nullptr) {
+           if (data == current->data) {
+               return current;
+           } else if (data < current->data) {
+               current = current->left;
+           } else {
+      	       current = current->right;
+           }
+       }
+      return nullptr;
+    }
+
+    void printTree() {
+	printTree(root);
     }
 
 };
 
-class Student {
-public:
-    std::string name;
-    std::string fac;
-    int pass;
-    std::string date;
-    std::string room;
-    
-    Person(const std::string& name, const std::string& fac, const std::string& pass, const std::string& date, const std::string& room) : name(name), fac(fac), pass(pass), date(date), room(room) {}
-};
+
+
 
 int main() {
     std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
     
     std::vector<int> allIds(1000000);
-    for (int i = 0; i < ARRAY_SIZE; i++) {
+    for (int i = 0; i < 1000000; i++) {
         allIds[i] = i + 1;
     }
     std::shuffle(allIds.begin(), allIds.end(), rng);
@@ -229,16 +261,25 @@ int main() {
     AVLTree<int> avl_int;
     AVLTree<std::string> avl_string;
     std::vector<Student> studentVec;
-    for (int i=0; i<100000, ++i) {
+    for (int i=0; i<100000;++i) {
         std::string name = firstNames[rand() % 9000] + " " + surnames[rand() % 9000];
         std::string fac = infoVec[rand() % 50000];
-        int pass = allIds[rand() % 1000000];
+        int pass = allIds[i];
         std::string date = birthDates[rand() % 10000];
 	std::string room = roomVec[rand() % 50000];
-        avl_int.insert(pass, i);
-        avl_string.insert(name, i);
-        Student student(name, fac, pass, date, room);
+	Student student(name, fac, pass, date, room);
         studentVec.push_back(student);
+        avl_int.insert(pass, &student);
+        avl_string.insert(name, &student);
     }
-        
+   avl_int.printTree();
+   std::cout << std::endl;   
+   std::cout << "Give me id" << "   ";
+   int id;
+   std::cin >> id;
+   Node<int>* node = avl_int.contains(id);
+   if (node != nullptr) {
+	std::cout << node->student->pass;
+   }
 }
+
