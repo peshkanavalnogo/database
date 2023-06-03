@@ -17,6 +17,14 @@ public:
     std::string room;
 
     Student(const std::string& name, const std::string& fac, const int& pass, const std::string& date, const std::string& room): name(name), fac(fac), pass(pass), date(date), room(room) {}
+
+    void showInfo(Student* student) {
+	    std::cout << "Name: " << student->name << "\n";
+	    std::cout << "Facility: " << student->fac << "\n";
+	    std::cout << "ID pass: " << student->pass << "\n";
+	    std::cout << "Birthday: " << student->date << "\n";
+	    std::cout << "Room number: " << student->room << "\n";
+    }
 };
 
 template<typename T>
@@ -27,7 +35,7 @@ struct Node {
         Node* right;
         int height;
 
-        Node(const T& data, Student* student): data(data), student(student), left(nullptr), right(nullptr), height(1) {}
+     	Node(Student* student, const T& data): student(student),data(data), left(nullptr), right(nullptr), height(1) {}
     };
 
 
@@ -93,7 +101,7 @@ private:
     
     Node<T>* insert(Node<T>* node, const T& data, Student* student) {
         if (node == nullptr) {
-            return new Node(data, student);
+            return new Node(student, data);
         }
         if (data < node->data) {
             node->left = insert(node->left, data, student);
@@ -147,7 +155,17 @@ private:
             std::cout << root->data << "  ";
             printTree(root->right);
     }
-
+    Node<T>* contains(Node<T>* node, const T& value) const {
+           if (!node)
+                   return nullptr;
+           if (value < node->data) {
+                   return contains(node->left, value);
+	   }else if (value > node->data) {
+                   return contains(node->right, value);
+	   }else {
+                   return node;
+	   }
+    }
     
 
 public:
@@ -161,18 +179,8 @@ public:
 	    root = remove(root, data, student);
 	
     }
-    Node<T>* contains(const T& data) const {
-       Node<T>* current = root;
-       while (current != nullptr) {
-           if (data == current->data) {
-               return current;
-           } else if (data < current->data) {
-               current = current->left;
-           } else {
-      	       current = current->right;
-           }
-       }
-      return nullptr;
+    Node<T>* contains(const T& value) const {
+	    return contains(root, value);
     }
 
     void printTree() {
@@ -191,7 +199,7 @@ int main() {
     for (int i = 0; i < 1000000; i++) {
         allIds[i] = i + 1;
     }
-    std::shuffle(allIds.begin(), allIds.end(), rng);
+    //std::shuffle(allIds.begin(), allIds.end(), rng);
 
     std::ifstream firstNameFile("es.txt");
     std::vector<std::string> firstNames;
@@ -260,26 +268,39 @@ int main() {
 
     AVLTree<int> avl_int;
     AVLTree<std::string> avl_string;
-    std::vector<Student> studentVec;
-    for (int i=0; i<100000;++i) {
-        std::string name = firstNames[rand() % 9000] + " " + surnames[rand() % 9000];
+    std::vector<Student*> studentVec;
+    for (int i=0; i<100;++i) {
+        std::string name = firstNames[i] + " " + surnames[i];
         std::string fac = infoVec[rand() % 50000];
         int pass = allIds[i];
         std::string date = birthDates[rand() % 10000];
 	std::string room = roomVec[rand() % 50000];
-	Student student(name, fac, pass, date, room);
+	Student* student = new Student(name, fac, pass, date, room);
         studentVec.push_back(student);
-        avl_int.insert(pass, &student);
-        avl_string.insert(name, &student);
+        avl_int.insert(pass, student);
+        avl_string.insert(name, student);
     }
-   avl_int.printTree();
-   std::cout << std::endl;   
-   std::cout << "Give me id" << "   ";
-   int id;
-   std::cin >> id;
-   Node<int>* node = avl_int.contains(id);
-   if (node != nullptr) {
-	std::cout << node->student->pass;
-   }
+   int number;
+   while (number != 3) {
+	std::cout << "If u want to exit just enter 3" << "\n";   
+   	std::cout << "Search id(1)/name(2)" << "\n"; 
+   	std::cin >> number;
+   	if (number == 1) {
+	   	std::cout << "Enter id" << "\n";
+	   	int id;
+	   	std::cin >> id;
+	   	Node<int>* node = avl_int.contains(id);
+	   	if (node != nullptr) {
+		   	node->student->showInfo(node->student);
+	   	}
+   	}else if (number == 2) {
+	   	std::cout << "Enter name" << "\n";
+		std::string name;
+		std::getline(std::cin >> std::ws, name);	
+	   	Node<std::string>* node = avl_string.contains(name);
+		if (node != nullptr) {
+			node->student->showInfo(node->student);
+		}
+   	}
+   }	
 }
-
